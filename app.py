@@ -71,7 +71,7 @@ Gentile [Nome],        ← saluto formale (o "Ciao [Nome]," se tono informale da
 
 %firma%
 
-Usa "\n" per i ritorni a capo. Termina SEMPRE con "%firma%" — niente nomi, ruoli o aziende scritti a mano. La email deve essere immediatamente inviabile senza modifiche, salvo inserire eventuali link mancanti indicati come [LINK CALENDARIO] o [LINK PRESENTAZIONE].
+Usa "\n\n" (doppio a capo) tra i paragrafi — mai "\n" singolo tra paragrafi distinti. Termina SEMPRE con "%firma%" — niente nomi, ruoli o aziende scritti a mano. La email deve essere immediatamente inviabile senza modifiche, salvo inserire eventuali link mancanti indicati come [LINK CALENDARIO] o [LINK PRESENTAZIONE].
 
 [FORMATO DI OUTPUT JSON]
 Restituisci ESCLUSIVAMENTE un oggetto JSON valido, senza blocchi markdown:
