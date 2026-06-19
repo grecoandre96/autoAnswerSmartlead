@@ -10,7 +10,12 @@ load_dotenv()
 _gemini_client = genai.Client(api_key=os.environ.get("GEMINI_API_KEY"))
 
 app = Flask(__name__)
-DB_PATH = os.path.join(os.path.dirname(__file__), "qa_data.db")
+
+# Il DB vive su un volume persistente se DB_DIR è configurato (es. /data su Railway),
+# altrimenti nella cartella dell'app (sviluppo locale).
+DB_DIR = os.environ.get("DB_DIR", os.path.dirname(__file__))
+os.makedirs(DB_DIR, exist_ok=True)
+DB_PATH = os.path.join(DB_DIR, "qa_data.db")
 
 # System prompt fisso — modificabile solo dall'agenzia via deploy.
 # {qa_examples} viene sostituito dinamicamente con i Q&A dal database.
