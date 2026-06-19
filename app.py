@@ -64,12 +64,9 @@ Gentile [Nome],        ← saluto formale (o "Ciao [Nome]," se tono informale da
 
 [corpo email — max 120 parole]
 
-[Firma]
-[Nome Agente]
-[Ruolo]
-[Azienda]
+%firma%
 
-Usa "\\n" per i ritorni a capo. La email deve essere immediatamente inviabile senza modifiche, salvo inserire eventuali link o dati mancanti indicati come [LINK CALENDARIO] o [LINK PRESENTAZIONE].
+Usa "\n" per i ritorni a capo. Termina SEMPRE con "%firma%" — niente nomi, ruoli o aziende scritti a mano. La email deve essere immediatamente inviabile senza modifiche, salvo inserire eventuali link mancanti indicati come [LINK CALENDARIO] o [LINK PRESENTAZIONE].
 
 [FORMATO DI OUTPUT JSON]
 Restituisci ESCLUSIVAMENTE un oggetto JSON valido, senza blocchi markdown:
@@ -161,16 +158,9 @@ def analyze_email():
         lead_company = data.get("lead_company", "")
         sequence_number = data.get("sequence_number", "")
         calendly_link = data.get("calendly_link", "")
-        sender_name = data.get("sender_name", "[Nome Agente]")
-        sender_role = data.get("sender_role", "")
-
-        firma = sender_name
-        if sender_role:
-            firma += f"\n{sender_role}"
 
         context_lines = [
             f"PROFILO AZIENDALE:\n{profilo_aziendale}",
-            f"MITTENTE (chi firma le email): {firma}",
         ]
         if calendly_link:
             context_lines.append(f"Link calendario (Calendly): {calendly_link}")
