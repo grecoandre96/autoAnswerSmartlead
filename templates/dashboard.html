@@ -113,12 +113,22 @@
     <!-- ======= RIGHT PANEL: Prompt attivo ======= -->
     <div class="col-lg-5">
       <div class="panel">
-        <div class="panel-header">
-          <h5>Prompt di Sistema</h5>
-          <p>Configurato dall'agenzia. Le variabili in <span style="color:#856404; font-weight:600;">{"{}"}</span> vengono sostituite dinamicamente da n8n e dalla knowledge base.</p>
+        <div class="panel-header d-flex align-items-start justify-content-between">
+          <div>
+            <h5>Prompt di Sistema</h5>
+            <p>Le variabili in <span style="color:#856404; font-weight:600;">{"{}"}</span> vengono sostituite dinamicamente da n8n e dalla knowledge base.</p>
+          </div>
+          <button class="btn btn-sm btn-outline-secondary" style="font-size:.75rem; flex-shrink:0;" id="editPromptBtn">Modifica</button>
         </div>
         <div class="panel-body d-flex flex-column" style="padding-bottom: 0;">
-          <div class="prompt-block">{{ system_prompt }}</div>
+          <div class="prompt-block" id="promptDisplay">{{ system_prompt }}</div>
+          <form id="promptEditForm" method="POST" action="/settings/system-prompt" style="display:none; flex:1; display:none; flex-direction:column;">
+            <textarea name="system_prompt" id="promptTextarea" class="form-control" style="flex:1; font-family:Consolas,monospace; font-size:.78rem; resize:none; border-radius:8px; height:100%;">{{ system_prompt }}</textarea>
+            <div class="d-flex gap-2 mt-2 mb-2">
+              <button type="submit" class="btn btn-primary btn-sm">Salva</button>
+              <button type="button" class="btn btn-secondary btn-sm" id="cancelPromptBtn">Annulla</button>
+            </div>
+          </form>
         </div>
         <div class="vars-section">
           <div style="font-size:.78rem; font-weight:700; color:#6c757d; margin-bottom:8px; text-transform:uppercase; letter-spacing:.05em;">Variabili passate da n8n</div>
@@ -178,6 +188,23 @@ document.addEventListener('DOMContentLoaded', function () {
       document.getElementById('editResponse').value = btn.dataset.response;
       new bootstrap.Modal(document.getElementById('editModal')).show();
     });
+  });
+
+  var promptDisplay = document.getElementById('promptDisplay');
+  var promptEditForm = document.getElementById('promptEditForm');
+  var editPromptBtn = document.getElementById('editPromptBtn');
+  var cancelPromptBtn = document.getElementById('cancelPromptBtn');
+
+  editPromptBtn.addEventListener('click', function () {
+    promptDisplay.style.display = 'none';
+    promptEditForm.style.display = 'flex';
+    editPromptBtn.style.display = 'none';
+  });
+
+  cancelPromptBtn.addEventListener('click', function () {
+    promptDisplay.style.display = 'block';
+    promptEditForm.style.display = 'none';
+    editPromptBtn.style.display = 'inline-block';
   });
 });
 </script>

@@ -17,8 +17,8 @@ DB_DIR = os.environ.get("DB_DIR", os.path.dirname(__file__))
 os.makedirs(DB_DIR, exist_ok=True)
 DB_PATH = os.path.join(DB_DIR, "qa_data.db")
 
-# System prompt fisso — modificabile solo dall'agenzia via deploy.
-# {qa_examples} viene sostituito dinamicamente con i Q&A dal database.
+# Default system prompt — usato solo al primo avvio per popolare il DB.
+# Dopo il primo deploy viene letto e modificato dal DB via dashboard.
 SYSTEM_PROMPT = """[CONTESTO — LEGGI CON ATTENZIONE]
 Sei un AI Sales Assistant. Le email che analizzi sono RISPOSTE di lead B2B a una nostra email di cold outreach: siamo stati NOI a contattarli per primi. Il lead non ci ha cercati — ha risposto a una nostra proposta.
 
@@ -104,6 +104,12 @@ def init_db():
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         )
     """)
+    conn.execute("""
+        CREATE TABLE IF NOT EXISTS settings (
+            key TEXT PRIMARY KEY,
+            value TEXT NOT NULL
+        )
+    """)
     conn.commit()
 
     # Se il DB è vuoto, carica gli esempi dal file seed
@@ -120,11 +126,19 @@ def init_db():
                 )
             conn.commit()
 
+    # Popola il system prompt di default se non esiste ancora
+    existing = conn.execute("SELECT 1 FROM settings WHERE key='system_prompt'").fetchone()
+    if not existing:
+        conn.execute("INSERT INTO settings (key, value) VALUES (?, ?)", ("system_prompt", SYSTEM_PROMPT))
+        conn.commit()
+
     conn.close()
 
 
 def build_system_prompt():
     conn = get_db()
+    prompt_row = conn.execute("SELECT value FROM settings WHERE key='system_prompt'").fetchone()
+    base_prompt = prompt_row["value"] if prompt_row else SYSTEM_PROMPT
     rows = conn.execute("SELECT context, response FROM qa_pairs ORDER BY id").fetchall()
     conn.close()
 
@@ -139,7 +153,7 @@ def build_system_prompt():
             )
         qa_section = "\n\n".join(examples)
 
-    return SYSTEM_PROMPT.replace("{qa_examples}", qa_section)
+    return base_prompt.replace("{qa_examples}", qa_section)
 
 
 # ---------------------------------------------------------------------------
@@ -204,8 +218,24 @@ def analyze_email():
 def dashboard():
     conn = get_db()
     qa_pairs = conn.execute("SELECT * FROM qa_pairs ORDER BY id DESC").fetchall()
+    prompt_row = conn.execute("SELECT value FROM settings WHERE key='system_prompt'").fetchone()
+    current_prompt = prompt_row["value"] if prompt_row else SYSTEM_PROMPT
     conn.close()
-    return render_template("dashboard.html", qa_pairs=qa_pairs, system_prompt=SYSTEM_PROMPT)
+    return render_template("dashboard.html", qa_pairs=qa_pairs, system_prompt=current_prompt)
+
+
+@app.route("/settings/system-prompt", methods=["POST"])
+def update_system_prompt():
+    new_prompt = request.form.get("system_prompt", "").strip()
+    if new_prompt:
+        conn = get_db()
+        conn.execute(
+            "INSERT OR REPLACE INTO settings (key, value) VALUES (?, ?)",
+            ("system_prompt", new_prompt),
+        )
+        conn.commit()
+        conn.close()
+    return redirect(url_for("dashboard"))
 
 
 @app.route("/qa/add", methods=["POST"])
