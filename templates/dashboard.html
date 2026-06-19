@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Bot Dashboard</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" />
+  <style>
+    body { background: #f4f6f9; font-family: 'Segoe UI', sans-serif; }
+    .panel { background: #fff; border-radius: 12px; box-shadow: 0 2px 12px rgba(0,0,0,.07); height: calc(100vh - 100px); display: flex; flex-direction: column; }
+    .panel-header { padding: 20px 24px 16px; border-bottom: 1px solid #e9ecef; flex-shrink: 0; }
+    .panel-header h5 { font-weight: 700; margin: 0; font-size: 1rem; }
+    .panel-header p { color: #6c757d; font-size: .82rem; margin: 4px 0 0; }
+    .panel-body { flex: 1; overflow-y: auto; padding: 20px 24px; }
+    .qa-card { border: 1px solid #e9ecef; border-radius: 8px; padding: 14px 16px; margin-bottom: 12px; background: #fafbfc; transition: border-color .15s; }
+    .qa-card:hover { border-color: #0d6efd; }
+    .qa-label { font-size: .72rem; font-weight: 700; text-transform: uppercase; letter-spacing: .06em; color: #6c757d; margin-bottom: 4px; }
+    .qa-text { font-size: .88rem; color: #212529; white-space: pre-wrap; }
+    .qa-response { color: #198754; }
+    .add-form { background: #f0f4ff; border: 1px dashed #0d6efd; border-radius: 8px; padding: 16px; margin-bottom: 20px; }
+    .prompt-block { background: #1e1e2e; color: #cdd6f4; border-radius: 8px; padding: 18px; font-family: 'Consolas', monospace; font-size: .78rem; white-space: pre-wrap; line-height: 1.6; flex: 1; overflow-y: auto; }
+    .var-badge { display: inline-block; background: #fff3cd; color: #856404; border-radius: 4px; padding: 2px 7px; font-size: .75rem; font-weight: 600; margin: 2px; }
+    .vars-section { padding: 16px 24px; border-top: 1px solid #e9ecef; flex-shrink: 0; }
+    .btn-del { color: #dc3545; background: none; border: none; padding: 0 4px; font-size: .8rem; cursor: pointer; }
+    .btn-del:hover { color: #a71d2a; }
+    .count-badge { background: #0d6efd; color: #fff; border-radius: 20px; padding: 2px 10px; font-size: .75rem; font-weight: 600; }
+    textarea { resize: vertical; }
+    .modal-context { color: #0d6efd; }
+    .modal-response { color: #198754; }
+    .topbar { background: #fff; border-bottom: 1px solid #e9ecef; padding: 14px 28px; display: flex; align-items: center; gap: 12px; margin-bottom: 20px; box-shadow: 0 1px 4px rgba(0,0,0,.05); }
+    .topbar-title { font-weight: 800; font-size: 1.1rem; color: #0d6efd; letter-spacing: -.02em; }
+    .topbar-sub { color: #6c757d; font-size: .82rem; }
+  </style>
+</head>
+<body>
+
+<div class="topbar">
+  <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#0d6efd" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/></svg>
+  <div>
+    <div class="topbar-title">Bot Dashboard</div>
+    <div class="topbar-sub">Gestione knowledge base e prompt di sistema</div>
+  </div>
+</div>
+
+<div class="container-fluid px-4 pb-4">
+  <div class="row g-4">
+
+    <!-- ======= LEFT PANEL: Knowledge Base ======= -->
+    <div class="col-lg-7">
+      <div class="panel">
+        <div class="panel-header d-flex align-items-start justify-content-between">
+          <div>
+            <h5>Knowledge Base <span class="count-badge ms-2">{{ qa_pairs | length }}</span></h5>
+            <p>Situazioni tipiche e risposte suggerite. Il bot le usa come riferimento per rispondere in modo coerente.</p>
+          </div>
+        </div>
+        <div class="panel-body">
+
+          <!-- Add form -->
+          <div class="add-form mb-3">
+            <div class="fw-bold mb-2" style="font-size:.85rem;">+ Aggiungi nuovo esempio</div>
+            <form method="POST" action="/qa/add">
+              <div class="mb-2">
+                <label class="form-label" style="font-size:.8rem; font-weight:600; color:#0d6efd;">SITUAZIONE / CONTESTO</label>
+                <textarea name="context" class="form-control form-control-sm" rows="2"
+                  placeholder="Es: Il lead dice che vuole aspettare o che è un periodo sbagliato..." required></textarea>
+              </div>
+              <div class="mb-2">
+                <label class="form-label" style="font-size:.8rem; font-weight:600; color:#198754;">RISPOSTA SUGGERITA</label>
+                <textarea name="response" class="form-control form-control-sm" rows="2"
+                  placeholder="Es: Capisco, proprio per questo potrebbe avere senso confrontarci ora per arrivare pronti al momento giusto..." required></textarea>
+              </div>
+              <button type="submit" class="btn btn-primary btn-sm">Aggiungi</button>
+            </form>
+          </div>
+
+          <!-- Q&A list -->
+          {% if qa_pairs %}
+            {% for qa in qa_pairs %}
+            <div class="qa-card">
+              <div class="d-flex justify-content-between align-items-start">
+                <div style="flex:1; min-width:0;">
+                  <div class="qa-label">Situazione</div>
+                  <div class="qa-text mb-2">{{ qa.context }}</div>
+                  <div class="qa-label qa-response">Risposta suggerita</div>
+                  <div class="qa-text qa-response">{{ qa.response }}</div>
+                </div>
+                <div class="d-flex gap-1 ms-3 flex-shrink-0">
+                  <button class="btn btn-sm btn-outline-secondary" style="font-size:.75rem;"
+                    onclick="openEditModal({{ qa.id }}, {{ qa.context | tojson }}, {{ qa.response | tojson }})">
+                    Modifica
+                  </button>
+                  <form method="POST" action="/qa/delete/{{ qa.id }}" style="display:inline;"
+                    onsubmit="return confirm('Eliminare questo esempio?')">
+                    <button type="submit" class="btn btn-sm btn-outline-danger" style="font-size:.75rem;">Elimina</button>
+                  </form>
+                </div>
+              </div>
+            </div>
+            {% endfor %}
+          {% else %}
+            <div class="text-center text-muted py-5">
+              <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#adb5bd" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="mb-3 d-block mx-auto"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+              <p style="font-size:.88rem;">Nessun esempio ancora caricato.<br>Aggiungine uno con il form qui sopra.</p>
+            </div>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+
+    <!-- ======= RIGHT PANEL: Prompt attivo ======= -->
+    <div class="col-lg-5">
+      <div class="panel">
+        <div class="panel-header">
+          <h5>Prompt di Sistema</h5>
+          <p>Configurato dall'agenzia. Le variabili in <span style="color:#856404; font-weight:600;">{"{}"}</span> vengono sostituite dinamicamente da n8n e dalla knowledge base.</p>
+        </div>
+        <div class="panel-body d-flex flex-column" style="padding-bottom: 0;">
+          <div class="prompt-block">{{ system_prompt }}</div>
+        </div>
+        <div class="vars-section">
+          <div style="font-size:.78rem; font-weight:700; color:#6c757d; margin-bottom:8px; text-transform:uppercase; letter-spacing:.05em;">Variabili passate da n8n</div>
+          <div>
+            <span class="var-badge">email_cliente</span>
+            <span class="var-badge">profilo_aziendale</span>
+            <span class="var-badge">lead_first_name</span>
+            <span class="var-badge">lead_company</span>
+            <span class="var-badge">sequence_number</span>
+            <span class="var-badge">calendly_link</span>
+            <span class="var-badge">sender_name</span>
+            <span class="var-badge">sender_role</span>
+          </div>
+          <div style="font-size:.75rem; color:#6c757d; margin-top:10px;">
+            Questi campi vengono inviati da n8n nel body della richiesta POST a <code>/analyze</code>.
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- Edit Modal -->
+<div class="modal fade" id="editModal" tabindex="-1">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Modifica esempio</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <form id="editForm" method="POST">
+        <div class="modal-body">
+          <div class="mb-3">
+            <label class="form-label modal-context fw-bold">Situazione / Contesto</label>
+            <textarea id="editContext" name="context" class="form-control" rows="3" required></textarea>
+          </div>
+          <div class="mb-3">
+            <label class="form-label modal-response fw-bold">Risposta suggerita</label>
+            <textarea id="editResponse" name="response" class="form-control" rows="3" required></textarea>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annulla</button>
+          <button type="submit" class="btn btn-primary">Salva modifiche</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+function openEditModal(id, context, response) {
+  document.getElementById('editForm').action = '/qa/edit/' + id;
+  document.getElementById('editContext').value = context;
+  document.getElementById('editResponse').value = response;
+  new bootstrap.Modal(document.getElementById('editModal')).show();
+}
+</script>
+</body>
+</html>
