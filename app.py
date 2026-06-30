@@ -170,17 +170,17 @@ def analyze_email():
         email_cliente = data.get("email_cliente", "").strip()
         profilo_aziendale = data.get("profilo_aziendale", "").strip()
 
-        if not email_cliente or not profilo_aziendale:
-            return jsonify({"error": "Campi obbligatori mancanti: email_cliente, profilo_aziendale"}), 400
+        if not email_cliente:
+            return jsonify({"error": "Campi obbligatori mancanti: email_cliente"}), 400
 
         lead_first_name = data.get("lead_first_name", "")
         lead_company = data.get("lead_company", "")
         sequence_number = data.get("sequence_number", "")
         calendly_link = data.get("calendly_link", "")
 
-        context_lines = [
-            f"PROFILO AZIENDALE:\n{profilo_aziendale}",
-        ]
+        context_lines = []
+        if profilo_aziendale:
+            context_lines.append(f"PROFILO AZIENDALE:\n{profilo_aziendale}")
         if calendly_link:
             context_lines.append(f"Link calendario (Calendly): {calendly_link}")
         context_lines.append(
